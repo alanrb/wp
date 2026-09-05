@@ -1,0 +1,8 @@
+{
+	"palette": [
+		{ "slug": "base", "color": "#ffffff", "name": "Base" },
+		{ "slug": "contrast", "color": "#111111", "name": "Contrast" },
+		{ "slug": "accent", "color": "#3858e9", "name": "Accent" },
+		{ "slug": "muted", "color": "#6b6b6b", "name": "Muted" }
+	]
+}

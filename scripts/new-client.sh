@@ -78,6 +78,8 @@ while IFS= read -r -d '' file; do
   mv "$tmp" "$file"
 done < <(find "$DEST" -type f ! -name '.gitkeep' -print0)
 
+node "$ROOT/scripts/lib/merge-tokens.mjs" "$DEST/theme.json" "$ROOT/shared/tokens"
+
 printf '{\n\t"patterns": {}\n}\n' > "$DEST/.shared-manifest.json"
 
 echo "Created $DEST"

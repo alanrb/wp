@@ -1,0 +1,9 @@
+{
+	"fontSizes": [
+		{ "slug": "small", "size": "0.875rem", "name": "Small", "fluid": false },
+		{ "slug": "medium", "size": "1rem", "name": "Medium", "fluid": false },
+		{ "slug": "large", "size": "1.5rem", "name": "Large", "fluid": { "min": "1.25rem", "max": "1.75rem" } },
+		{ "slug": "x-large", "size": "2.25rem", "name": "Extra Large", "fluid": { "min": "1.75rem", "max": "2.75rem" } },
+		{ "slug": "xx-large", "size": "3.5rem", "name": "Display", "fluid": { "min": "2.5rem", "max": "4.5rem" } }
+	]
+}

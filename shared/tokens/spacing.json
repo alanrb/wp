@@ -1,0 +1,11 @@
+{
+	"spacingSizes": [
+		{ "slug": "20", "size": "0.5rem", "name": "1" },
+		{ "slug": "30", "size": "1rem", "name": "2" },
+		{ "slug": "40", "size": "1.5rem", "name": "3" },
+		{ "slug": "50", "size": "2.5rem", "name": "4" },
+		{ "slug": "60", "size": "4rem", "name": "5" },
+		{ "slug": "70", "size": "6rem", "name": "6" },
+		{ "slug": "80", "size": "8rem", "name": "7" }
+	]
+}
