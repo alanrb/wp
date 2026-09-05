@@ -83,3 +83,22 @@ setup() {
   [ "$status" -eq 1 ]
   [[ "$output" == *"already exists"* ]]
 }
+
+@test "preserves backslash, ampersand, and pipe in description" {
+  "$SCRIPT" guitar "Guitar Shop" "Guitars \& Sons | Co." >/dev/null
+  grep -q 'Description: Guitars \\& Sons | Co.' "$THEMES_DIR/client-guitar/style.css"
+}
+
+@test "rejects display name containing comment-terminator */" {
+  run "$SCRIPT" weird "Weird */ Name"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"cannot contain */"* ]]
+  [ ! -d "$THEMES_DIR/client-weird" ]
+}
+
+@test "rejects display name containing newline" {
+  run "$SCRIPT" multi $'Multi\nLine' "desc"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"cannot contain newlines or control characters"* ]]
+  [ ! -d "$THEMES_DIR/client-multi" ]
+}

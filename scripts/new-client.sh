@@ -21,6 +21,26 @@ if ! printf '%s' "$SLUG" | grep -Eq '^[a-z][a-z0-9-]*$'; then
   exit 2
 fi
 
+# Validate DISPLAY_NAME: reject */ sequences and control characters (including newlines)
+if printf '%s' "$DISPLAY_NAME" | grep -q '\*/'; then
+  echo "Error: display name cannot contain */ (it would break the CSS comment block)" >&2
+  exit 2
+fi
+if printf '%s\0' "$DISPLAY_NAME" | grep -zq '[[:cntrl:]]'; then
+  echo "Error: display name cannot contain newlines or control characters" >&2
+  exit 2
+fi
+
+# Validate DESCRIPTION: reject */ sequences and control characters (including newlines)
+if printf '%s' "$DESCRIPTION" | grep -q '\*/'; then
+  echo "Error: description cannot contain */ (it would break the CSS comment block)" >&2
+  exit 2
+fi
+if printf '%s\0' "$DESCRIPTION" | grep -zq '[[:cntrl:]]'; then
+  echo "Error: description cannot contain newlines or control characters" >&2
+  exit 2
+fi
+
 THEME_SLUG="client-$SLUG"
 DEST="$THEMES_DIR/$THEME_SLUG"
 
