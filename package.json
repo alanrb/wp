@@ -12,7 +12,9 @@
     "env:up": "docker compose up -d",
     "env:down": "docker compose down",
     "env:reset": "docker compose down -v && docker compose up -d",
-    "env:cli": "docker compose run --rm cli wp"
+    "env:cli": "docker compose run --rm cli wp",
+    "env:init": "./scripts/env-init.sh",
+    "env:logs": "docker compose logs -f wordpress"
   },
   "devDependencies": {
     "bats": "^1.11.0"
