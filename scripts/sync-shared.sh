@@ -39,7 +39,11 @@ for name in ${PATTERNS[@]+"${PATTERNS[@]}"}; do
   if [ -f "$dest" ] && [ "$FORCE" -eq 0 ]; then
     recorded="$(node "$ROOT/scripts/lib/manifest.mjs" read "$MANIFEST" "$name.php")"
     current="$(checksum_of "$dest")"
-    if [ -n "$recorded" ] && [ "$recorded" != "$current" ]; then
+    if [ -z "$recorded" ]; then
+      echo "Error: $THEME/patterns/$name.php exists with no recorded provenance — refusing to overwrite. Re-run with --force if this file is safe to replace." >&2
+      exit 1
+    fi
+    if [ "$recorded" != "$current" ]; then
       echo "Error: $THEME/patterns/$name.php has been locally modified — refusing to overwrite. Re-run with --force to discard local changes." >&2
       exit 1
     fi
@@ -51,7 +55,10 @@ for name in ${PATTERNS[@]+"${PATTERNS[@]}"}; do
     echo " * NOTE: synced from shared/patterns/$name.php at $REV — edit the shared copy,"
     echo " * then re-run: npm run sync-shared -- $THEME $name"
     echo " */"
-    tail -n +2 "$src" | sed -e "s|Slug: shared/|Slug: $THEME/|"
+    tail -n +2 "$src" | awk -v theme="$THEME" '
+      !done && /Slug: shared\// { sub(/Slug: shared\//, "Slug: " theme "/"); done=1 }
+      { print }
+    '
   } > "$dest.tmp"
   mv "$dest.tmp" "$dest"
 

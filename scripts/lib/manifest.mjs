@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync } from 'node:fs';
+import { basename } from 'node:path';
 
 const [ command, manifestPath, pattern, source, rev, checksum ] = process.argv.slice( 2 );
 
@@ -8,8 +9,12 @@ const load = () => {
 		const data = JSON.parse( readFileSync( manifestPath, 'utf8' ) );
 		data.patterns = data.patterns ?? {};
 		return data;
-	} catch {
-		return { patterns: {} };
+	} catch ( error ) {
+		if ( error.code === 'ENOENT' ) {
+			return { patterns: {} };
+		}
+		console.error( `Error: ${ basename( manifestPath ) } is not valid JSON — ${ error.message }` );
+		process.exit( 1 );
 	}
 };
 
