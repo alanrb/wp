@@ -11,6 +11,7 @@
     "test": "bats tests/scripts",
     "test:integration": "bats tests/integration",
     "new-client": "./scripts/new-client.sh",
+    "sync-shared": "./scripts/sync-shared.sh",
     "build": "./scripts/build-theme.sh",
     "watch": "./scripts/build-theme.sh",
     "env:up": "docker compose up -d",
