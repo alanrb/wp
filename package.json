@@ -17,6 +17,8 @@
     "package": "./scripts/package-theme.sh",
     "lint": "./scripts/lint-themes.sh lint",
     "format": "./scripts/lint-themes.sh format",
+    "verify": "./scripts/verify.sh",
+    "check": "./scripts/theme-check.sh",
     "env:up": "docker compose up -d",
     "env:down": "docker compose down",
     "env:reset": "docker compose down -v && docker compose up -d",
@@ -27,6 +29,7 @@
   "devDependencies": {
     "@wordpress/scripts": "^30.27.0",
     "bats": "^1.11.0",
+    "pa11y-ci": "^3.1.0",
     "sass": "^1.104.0"
   }
 }

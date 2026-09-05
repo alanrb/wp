@@ -76,7 +76,7 @@ while IFS= read -r -d '' file; do
     -e "s|{{VERSION}}|$esc_version|g" \
     "$file" > "$tmp"
   mv "$tmp" "$file"
-done < <(find "$DEST" -type f ! -name '.gitkeep' -print0)
+done < <(find "$DEST" -type f ! -name '.gitkeep' ! -name 'screenshot.png' -print0)
 
 node "$ROOT/scripts/lib/merge-tokens.mjs" "$DEST/theme.json" "$ROOT/shared/tokens"
 
