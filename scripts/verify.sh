@@ -8,6 +8,10 @@ cd "$ROOT"
 
 [ -f .env ] && { set -a; . ./.env; set +a; }
 WP_URL="${WP_URL:-http://localhost:8080}"
+# Exported so `docker compose run` (a child process) resolves the cli
+# container's /dist mount from the same DIST_DIR verify.sh itself uses —
+# see docker-compose.yml's `${DIST_DIR:-./dist}:/dist` (Finding 5).
+export DIST_DIR
 
 [ "$#" -ge 1 ] || { echo "Usage: verify.sh <theme-slug>" >&2; exit 2; }
 THEME="$1"
@@ -16,6 +20,34 @@ THEME_PATH="$THEMES_DIR/$THEME"
 
 wp() { docker compose run --rm cli "$@" --allow-root; }
 step() { echo; echo "==> $1"; }
+
+# WooCommerce redirects an empty /checkout/ to /cart/ on template_redirect,
+# before the checkout template ever runs — so a plain route smoke test only
+# ever proves the redirect fires, never that checkout itself renders. Drop a
+# temporary mu-plugin that suppresses that redirect for the life of this run,
+# so /checkout/ actually executes its own template like every other route,
+# and make sure it's removed again no matter how this script exits.
+MU_PLUGIN_DIR="$ROOT/docker/mu-plugins"
+MU_PLUGIN="$MU_PLUGIN_DIR/zzz-verify-suppress-checkout-redirect.php"
+cleanup_mu_plugin() { rm -f "$MU_PLUGIN"; }
+trap cleanup_mu_plugin EXIT
+mkdir -p "$MU_PLUGIN_DIR"
+cat > "$MU_PLUGIN" <<'PHP'
+<?php
+/**
+ * Plugin Name: Verify: suppress checkout empty-cart redirect
+ * Description: Written and removed by scripts/verify.sh for the duration of
+ * a single run. Suppresses WooCommerce's woocommerce_checkout_redirect_empty_cart
+ * redirect so the delivery gate's route smoke test renders /checkout/ itself
+ * instead of only proving the redirect to /cart/ fires.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+add_filter( 'woocommerce_checkout_redirect_empty_cart', '__return_false' );
+PHP
 
 step "1/7 Lint"
 ( cd "$THEME_PATH" && "$ROOT/node_modules/.bin/wp-scripts" lint-js src )
@@ -29,8 +61,22 @@ node "$ROOT/scripts/lib/validate-theme-json.mjs" "$THEME_PATH/theme.json"
 
 step "3/7 Theme Check"
 wp theme activate "$THEME"
-CHECK_OUTPUT="$(wp theme-check run "$THEME" 2>&1 || true)"
+set +e
+CHECK_OUTPUT="$(wp theme-check run "$THEME" 2>&1)"
+CHECK_STATUS=$?
+set -e
 echo "$CHECK_OUTPUT"
+# A non-zero exit is expected when Theme Check actually ran and found
+# REQUIRED-level problems (handled below) — but wp-cli also exits non-zero
+# for reasons that mean Theme Check never ran at all (theme not found, the
+# plugin missing/deactivated, a docker/wp-cli crash). Silently swallowing
+# that with `|| true` and trusting only the REQUIRED grep would let those
+# cases through as "zero problems found". Require the run to have actually
+# produced a Theme Check result before trusting its silence.
+if [ "$CHECK_STATUS" -ne 0 ] && ! echo "$CHECK_OUTPUT" | grep -qi 'REQUIRED'; then
+  echo "Error: Theme Check did not complete (exit $CHECK_STATUS) and reported no REQUIRED-level findings — this cannot be trusted as a pass." >&2
+  exit 1
+fi
 if echo "$CHECK_OUTPUT" | grep -qi 'REQUIRED'; then
   echo "Error: Theme Check reported REQUIRED-level problems." >&2
   exit 1
@@ -49,6 +95,17 @@ for forbidden in "$THEME/src/" "node_modules" "webpack.config.js" ".shared-manif
 done
 
 step "5/7 Install the packaged zip into WordPress"
+# The cli container's /dist mount is derived from DIST_DIR (see
+# docker-compose.yml's `${DIST_DIR:-./dist}:/dist`, and the `export
+# DIST_DIR` above) so it stays in sync with $ZIP. Still, confirm the exact
+# zip we just packaged is actually visible at that path inside the
+# container before installing — if the mount and DIST_DIR have somehow
+# drifted apart, install a stale or wrong zip only over our dead body.
+if ! docker compose run --rm --entrypoint test cli -f "/dist/$THEME-$VERSION.zip" >/dev/null 2>&1; then
+  echo "Error: $ZIP is not visible inside the cli container at /dist/$THEME-$VERSION.zip." >&2
+  echo "       DIST_DIR ($DIST_DIR) and the cli container's /dist mount have drifted apart — refusing to install a possibly-wrong zip." >&2
+  exit 1
+fi
 wp theme install "/dist/$THEME-$VERSION.zip" --force --activate
 wp theme is-active "$THEME"
 
@@ -65,26 +122,33 @@ for url in "${ROUTES[@]}"; do
   code="$(curl -s -o /dev/null -w '%{http_code}' "$url")"
   expected=200
   [[ "$url" == *"no-such-page-404"* ]] && expected=404
-  # WooCommerce redirects an empty checkout to the cart page by design
-  # (woocommerce_checkout_redirect_empty_cart) — a fresh store has no cart
-  # contents, so accept that specific, well-known redirect as a pass.
-  if [[ "$url" == *"/checkout/"* && "$code" = "302" ]]; then
-    redirect="$(curl -s -o /dev/null -w '%{redirect_url}' "$url")"
-    if [[ "$redirect" == "$WP_URL/cart/"* ]]; then
-      echo "  ok  302  $url (redirected to cart — empty cart)"
-      continue
-    fi
-  fi
   if [ "$code" != "$expected" ]; then
-    echo "Error: $url returned $code (expected $expected)" >&2
+    if [[ "$url" == *"/checkout/"* ]]; then
+      echo "Error: $url returned $code (expected $expected) — the checkout-redirect suppression (mu-plugin) did not take effect, so /checkout/ is UNPROVEN. Refusing to report PASS while silently skipping this route." >&2
+    else
+      echo "Error: $url returned $code (expected $expected)" >&2
+    fi
     exit 1
   fi
   echo "  ok  $code  $url"
 done
 
-if wp eval 'echo file_get_contents( WP_CONTENT_DIR . "/debug.log" );' 2>/dev/null | grep -Eq 'PHP (Warning|Notice|Fatal|Deprecated)'; then
+# `wp eval ... | grep ...` alone can't tell "log is clean" apart from
+# "wp eval itself died" — pipefail doesn't help because grep's own no-match
+# exit status is rightmost in the pipeline either way. Check wp eval's exit
+# status explicitly so a broken read can't be mistaken for a clean log.
+set +e
+DEBUG_LOG="$(wp eval 'echo file_get_contents( WP_CONTENT_DIR . "/debug.log" );' 2>&1)"
+DEBUG_STATUS=$?
+set -e
+if [ "$DEBUG_STATUS" -ne 0 ]; then
+  echo "Error: could not read wp-content/debug.log via wp eval (exit $DEBUG_STATUS) — cannot verify rendering produced no PHP notices." >&2
+  echo "$DEBUG_LOG" >&2
+  exit 1
+fi
+if echo "$DEBUG_LOG" | grep -Eq 'PHP (Warning|Notice|Fatal|Deprecated)'; then
   echo "Error: PHP notices were logged while rendering — see wp-content/debug.log" >&2
-  wp eval 'echo file_get_contents( WP_CONTENT_DIR . "/debug.log" );'
+  echo "$DEBUG_LOG"
   exit 1
 fi
 

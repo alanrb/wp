@@ -30,3 +30,59 @@ teardown_file() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"ready to deliver"* ]]
 }
+
+# The fail-closed guarantee is this task's entire point, so it needs its own
+# proof: deliberately break something real and confirm verify.sh actually
+# stops and says why, instead of only asserting the happy path passes.
+@test "the gate fails closed on an invalid theme.json" {
+  local theme_json="$ROOT/themes/client-smoke/theme.json"
+  cp "$theme_json" "$theme_json.bak"
+  # Corrupt the schema version — the cheapest reliable, real defect to
+  # trigger: Step 2/7 (validate-theme-json.mjs) must catch this before the
+  # gate ever reaches Theme Check, packaging, or install.
+  node -e '
+    const fs = require("fs");
+    const path = process.argv[1];
+    const theme = JSON.parse(fs.readFileSync(path, "utf8"));
+    theme.version = 2;
+    fs.writeFileSync(path, JSON.stringify(theme, null, 2));
+  ' "$theme_json"
+
+  run "$ROOT/scripts/verify.sh" client-smoke
+
+  mv "$theme_json.bak" "$theme_json"
+
+  echo "$output"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"version must be 3"* ]]
+  [[ "$output" != *"ready to deliver"* ]]
+}
+
+# A second, slower fail-closed proof that exercises Finding 2 directly: a
+# real PHP notice logged while rendering must be caught by the route smoke
+# test's debug.log scan, all the way through build, package, and install.
+@test "the gate fails closed when rendering logs a PHP notice" {
+  local functions_php="$ROOT/themes/client-smoke/functions.php"
+  cp "$functions_php" "$functions_php.bak"
+  cat >> "$functions_php" <<'PHP'
+
+// Deliberately injected by tests/integration/verify.bats to prove the
+// delivery gate's debug-log scan (Finding 2) actually catches a real PHP
+// notice logged while rendering, not just a broken read of debug.log.
+add_action(
+	'wp_footer',
+	function () {
+		echo $verify_bats_deliberate_notice_trigger;
+	}
+);
+PHP
+
+  run "$ROOT/scripts/verify.sh" client-smoke
+
+  mv "$functions_php.bak" "$functions_php"
+
+  echo "$output"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"PHP notices were logged while rendering"* ]]
+  [[ "$output" != *"ready to deliver"* ]]
+}

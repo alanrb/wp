@@ -50,7 +50,7 @@ services:
       - wp_data:/var/www/html
       - ./themes:/var/www/html/wp-content/client-themes
       - ./docker/mu-plugins:/var/www/html/wp-content/mu-plugins
-      - ./dist:/dist
+      - ${DIST_DIR:-./dist}:/dist
     entrypoint: wp
 
 volumes:
