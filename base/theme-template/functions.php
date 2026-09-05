@@ -21,3 +21,31 @@ add_action(
 		}
 	}
 );
+
+add_action(
+	'wp_enqueue_scripts',
+	function () {
+		$asset_file = get_theme_file_path( 'build/index.asset.php' );
+
+		if ( ! file_exists( $asset_file ) ) {
+			return;
+		}
+
+		$asset = require $asset_file;
+
+		wp_enqueue_style(
+			'{{CLIENT_SLUG}}-style',
+			get_theme_file_uri( 'build/style-index.css' ),
+			array(),
+			$asset['version']
+		);
+
+		wp_enqueue_script(
+			'{{CLIENT_SLUG}}-script',
+			get_theme_file_uri( 'build/index.js' ),
+			$asset['dependencies'],
+			$asset['version'],
+			true
+		);
+	}
+);
