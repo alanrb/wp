@@ -8,6 +8,8 @@ setup_file() {
 
 teardown_file() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  cd "$ROOT"
+  docker compose run --rm cli theme activate twentytwentyfive --allow-root >/dev/null 2>&1 || true
   rm -rf "$ROOT/themes/client-smoke"
 }
 
