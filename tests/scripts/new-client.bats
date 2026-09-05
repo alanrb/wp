@@ -39,3 +39,47 @@ setup() {
   run "$SCRIPT" piano "Piano Store & Services"
   [ "$status" -eq 0 ]
 }
+
+@test "creates the theme directory with the client- prefix" {
+  run "$SCRIPT" piano "Piano Store & Services"
+  [ "$status" -eq 0 ]
+  [ -d "$THEMES_DIR/client-piano" ]
+  [ -f "$THEMES_DIR/client-piano/theme.json" ]
+  [ -f "$THEMES_DIR/client-piano/templates/index.html" ]
+}
+
+@test "leaves no placeholder tokens behind" {
+  "$SCRIPT" piano "Piano Store & Services" >/dev/null
+  ! grep -rq '{{' "$THEMES_DIR/client-piano"
+}
+
+@test "writes the display name into the style.css header" {
+  "$SCRIPT" piano "Piano Store & Services" >/dev/null
+  grep -q "Theme Name: Piano Store & Services" "$THEMES_DIR/client-piano/style.css"
+  grep -q "Version: 1.0.0" "$THEMES_DIR/client-piano/style.css"
+  grep -q "Text Domain: client-piano" "$THEMES_DIR/client-piano/style.css"
+}
+
+@test "uses the description argument when supplied" {
+  "$SCRIPT" jam "Fruit Jam Production" "Preserves made on site" >/dev/null
+  grep -q "Description: Preserves made on site" "$THEMES_DIR/client-jam/style.css"
+}
+
+@test "produces a theme.json that parses as JSON" {
+  "$SCRIPT" piano "Piano Store & Services" >/dev/null
+  run node -e "require('$THEMES_DIR/client-piano/theme.json')"
+  [ "$status" -eq 0 ]
+}
+
+@test "writes an empty shared manifest" {
+  "$SCRIPT" piano "Piano Store & Services" >/dev/null
+  run node -e "const m=require('$THEMES_DIR/client-piano/.shared-manifest.json'); process.exit(Object.keys(m.patterns).length === 0 ? 0 : 1)"
+  [ "$status" -eq 0 ]
+}
+
+@test "refuses to overwrite an existing theme" {
+  "$SCRIPT" piano "Piano Store & Services" >/dev/null
+  run "$SCRIPT" piano "Piano Store & Services"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"already exists"* ]]
+}

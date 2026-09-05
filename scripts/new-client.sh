@@ -24,4 +24,40 @@ fi
 THEME_SLUG="client-$SLUG"
 DEST="$THEMES_DIR/$THEME_SLUG"
 
-echo "Would scaffold $THEME_SLUG (\"$DISPLAY_NAME\") into $DEST"
+TEMPLATE="$ROOT/base/theme-template"
+VERSION="1.0.0"
+
+[ -d "$TEMPLATE" ] || { echo "Error: template not found at $TEMPLATE" >&2; exit 1; }
+
+if [ -e "$DEST" ]; then
+  echo "Error: $DEST already exists — refusing to overwrite" >&2
+  exit 1
+fi
+
+mkdir -p "$THEMES_DIR"
+cp -R "$TEMPLATE" "$DEST"
+
+# Escape characters that are special on sed's replacement side: backslash,
+# ampersand (expands to the whole match), and the '|' delimiter.
+sed_escape() { printf '%s' "$1" | sed -e 's/[\\&|]/\\&/g'; }
+
+esc_slug="$(sed_escape "$THEME_SLUG")"
+esc_name="$(sed_escape "$DISPLAY_NAME")"
+esc_desc="$(sed_escape "$DESCRIPTION")"
+esc_version="$(sed_escape "$VERSION")"
+
+# Substitute placeholders. Never use sed -i: it is not portable across BSD/GNU.
+while IFS= read -r -d '' file; do
+  tmp="$file.tmp"
+  sed \
+    -e "s|{{CLIENT_SLUG}}|$esc_slug|g" \
+    -e "s|{{CLIENT_NAME}}|$esc_name|g" \
+    -e "s|{{CLIENT_DESCRIPTION}}|$esc_desc|g" \
+    -e "s|{{VERSION}}|$esc_version|g" \
+    "$file" > "$tmp"
+  mv "$tmp" "$file"
+done < <(find "$DEST" -type f ! -name '.gitkeep' -print0)
+
+printf '{\n\t"patterns": {}\n}\n' > "$DEST/.shared-manifest.json"
+
+echo "Created $DEST"
