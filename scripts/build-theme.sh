@@ -15,5 +15,10 @@ THEME_PATH="$THEMES_DIR/$THEME"
 
 export SHARED_WEBPACK_CONFIG="$ROOT/shared/build/webpack.config.js"
 
+# Every scaffolded theme's package.json hard-codes a literal browserslist
+# array instead of "extends @wordpress/browserslist-config" -- see the
+# top-of-file comment in shared/build/webpack.config.js for why (a webpack
+# 5.110.3 regression) and what to do once it's fixed upstream.
+
 cd "$THEME_PATH"
 "$ROOT/node_modules/.bin/wp-scripts" "$MODE"
