@@ -19,7 +19,7 @@ npm run verify -- client-piano                       # the delivery gate (see be
 npm test                                             # bats script tests, no Docker needed
 npm run test:integration                             # bats tests against the running stack
 npx bats tests/scripts/new-client.bats               # a single test file
-docker compose run --rm cli theme list               # any wp-cli command (cli's entrypoint is `wp`)
+npm run env:cli -- theme list                        # any wp-cli command
 ```
 
 `npm run lint` / `npm run format` run `wp-scripts lint-js`/`lint-style`/`format` over every
@@ -37,11 +37,6 @@ The site runs at http://localhost:8080 (admin/admin). Themes are exposed to Word
 `register_theme_directory()` from `docker/mu-plugins/`, mounted at `wp-content/client-themes`
 — *not* over `wp-content/themes` — so bundled themes still work and wp-cli installs (which land
 in the default `wp-content/themes`) never land in the repo's bind-mounted `themes/`.
-
-> **Known issue:** the `env:cli` npm script (`docker compose run --rm cli wp`) passes a
-> redundant literal `wp` on top of the `cli` service's own `entrypoint: wp` in
-> `docker-compose.yml`, so `npm run env:cli -- <args>` currently fails with "'wp' is not a
-> registered wp command". Call `docker compose run --rm cli <args>` directly until that's fixed.
 
 ## What this repo is
 
