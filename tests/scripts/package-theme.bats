@@ -5,7 +5,11 @@ setup() {
   SCRIPT="$ROOT/scripts/package-theme.sh"
   export THEMES_DIR="$BATS_TEST_TMPDIR/themes"
   export DIST_DIR="$BATS_TEST_TMPDIR/dist"
-  "$ROOT/scripts/new-client.sh" piano "Piano Store" >/dev/null
+  # Use the spec's real first client name. At 22 characters it is long enough
+  # to have overflowed stylelint's 80-column limit once substituted into
+  # src/style.scss — every fixture here used a short name, and every case
+  # passed --skip-lint, which is how that shipped unnoticed.
+  "$ROOT/scripts/new-client.sh" piano "Piano Store & Services" >/dev/null
   "$ROOT/scripts/build-theme.sh" client-piano >/dev/null
 }
 
@@ -51,6 +55,18 @@ setup() {
   run "$SCRIPT" client-piano --skip-lint
   [ "$status" -ne 0 ]
   [[ "$output" == *"build"* ]]
+}
+
+# Regression: no other case here exercises the lint path at all, so nothing
+# noticed that a long client display name substituted into a scaffolded file
+# could break lint — and with it `npm run lint`, `npm run package` and step 1/7
+# of the delivery gate. This case must NOT pass --skip-lint.
+@test "packages a theme with a long client name without skipping lint" {
+  grep -q "Theme Name: Piano Store & Services" "$THEMES_DIR/client-piano/style.css"
+  run "$SCRIPT" client-piano
+  echo "$output"
+  [ "$status" -eq 0 ]
+  [ -f "$DIST_DIR/client-piano-1.0.0.zip" ]
 }
 
 @test "fails on an unknown theme" {
