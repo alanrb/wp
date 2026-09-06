@@ -32,11 +32,14 @@ services:
         define( 'WP_DEBUG_DISPLAY', false );
     volumes:
       - wp_data:/var/www/html
-      - ./themes:/var/www/html/wp-content/client-themes
+      - ${THEMES_DIR:-./themes}:/var/www/html/wp-content/client-themes
       - ./docker/mu-plugins:/var/www/html/wp-content/mu-plugins
 
   cli:
-    image: wordpress:cli-php8.3
+    # PHP_TAG must track the PHP part of WP_IMAGE_TAG: this container is where
+    # `php -l` and Theme Check run, so leaving it pinned would silently exercise
+    # a different PHP version from the one the site under test serves (NFR4).
+    image: wordpress:cli-${PHP_TAG:-php8.3}
     depends_on:
       - wordpress
     user: "33:33"
@@ -48,7 +51,7 @@ services:
       HOME: /tmp
     volumes:
       - wp_data:/var/www/html
-      - ./themes:/var/www/html/wp-content/client-themes
+      - ${THEMES_DIR:-./themes}:/var/www/html/wp-content/client-themes
       - ./docker/mu-plugins:/var/www/html/wp-content/mu-plugins
       - ${DIST_DIR:-./dist}:/dist
     entrypoint: wp
