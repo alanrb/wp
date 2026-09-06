@@ -11,13 +11,19 @@ command surface, architecture and the things that will otherwise cost you an hou
 ```bash
 npm install
 
-npm run env:use -- piano            # point local commands at this client's stack
-npm run env:up && npm run env:init  # WordPress + WooCommerce at http://localhost:8080
-npm run seed -- piano               # demo products, pages and posts to look at
+npm run env:use -- piano                          # point local commands at this client's stack
+npm run env:up && npm run env:init                # WordPress + WooCommerce at http://localhost:8080
+npm run seed -- piano                             # demo products, pages and posts to look at
+npm run env:cli -- theme activate client-piano    # show that client's theme
 ```
 
 Each client runs as its own Docker Compose project with its own database, so two client sites can
 run side by side without their content mixing — `piano` on :8080, `jam` on :8081.
+
+That last line is also the fix when a site looks empty. `npm run verify` reactivates a bundled
+theme when it finishes — deliberately, so it never deletes a theme that is still in use — so after
+verifying you are looking at Twenty Twenty-Five rendering your client's content, not the client's
+theme. The products and images are still there; re-activate and they reappear.
 
 ## Adding a client
 
