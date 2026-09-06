@@ -173,9 +173,10 @@ if echo "$DEBUG_LOG" | grep -Eq 'PHP (Warning|Notice|Fatal|Deprecated)'; then
 fi
 
 step "7/7 Accessibility"
-# .pa11yci.json hardcodes :8080. If WP_PORT is overridden, pa11y-ci would scan
-# whatever else answers on 8080 and PASS — the fail-open shape this gate exists
-# to prevent. Prove the page pa11y is about to scan really belongs to the theme
+# .pa11yci.js derives its host from WP_URL, but each client now runs on its own
+# port, so a stale or mismatched WP_URL would have pa11y-ci scan a DIFFERENT
+# client's site and PASS — the fail-open shape this gate exists to prevent.
+# Prove the page pa11y is about to scan really belongs to the theme
 # under test before trusting its verdict. The theme's own enqueued stylesheet
 # carries the theme root and slug in its URL, which is the fingerprint we look
 # for (either theme root can legitimately serve it).
@@ -187,7 +188,7 @@ PA11Y_URL="$(node -e '
     process.exit( 1 );
   }
   process.stdout.write( url );
-' "$ROOT/.pa11yci.json")"
+' "$ROOT/.pa11yci.js")"
 set +e
 PA11Y_HTML="$(curl -sS --fail "$PA11Y_URL" 2>&1)"
 PA11Y_FETCH_STATUS=$?
@@ -199,11 +200,11 @@ if [ "$PA11Y_FETCH_STATUS" -ne 0 ]; then
 fi
 if ! printf '%s' "$PA11Y_HTML" | grep -Eq "wp-content/(client-)?themes/$THEME/"; then
   echo "Error: $PA11Y_URL does not render $THEME — no wp-content/themes/$THEME/ asset reference in the response." >&2
-  echo "       .pa11yci.json scans port 8080; if WP_PORT is overridden this is a different service, and a11y results for it would say nothing about $THEME." >&2
+  echo "       .pa11yci.js derives its host from WP_URL ($PA11Y_URL). If that points at another client's stack, its a11y results would say nothing about $THEME." >&2
   exit 1
 fi
 echo "  ok  $PA11Y_URL is served by $THEME"
-"$ROOT/node_modules/.bin/pa11y-ci" --config "$ROOT/.pa11yci.json"
+"$ROOT/node_modules/.bin/pa11y-ci" --config "$ROOT/.pa11yci.js"
 
 echo
 echo "PASS — $THEME $VERSION is ready to deliver: $ZIP"

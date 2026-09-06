@@ -5,3 +5,4 @@ themes/*/build/
 themes/*/node_modules/
 .env
 .DS_Store
+dist/*.zip

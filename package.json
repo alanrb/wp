@@ -25,7 +25,8 @@
 		"env:cli": "docker compose run --rm cli",
 		"env:init": "./scripts/env-init.sh",
 		"env:logs": "docker compose logs -f wordpress",
-		"seed": "./scripts/seed/seed.sh"
+		"seed": "./scripts/seed/seed.sh",
+		"env:use": "./scripts/env-use.sh"
 	},
 	"devDependencies": {
 		"@wordpress/scripts": "^30.27.0",
