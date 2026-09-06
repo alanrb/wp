@@ -1,0 +1,60 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+
+<!-- wp:group {"tagName":"main","layout":{"type":"constrained"}} -->
+<main class="wp-block-group">
+	<!-- wp:pattern {"slug":"client-piano/hero-nameplate"} /-->
+
+	<!-- wp:group {"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|60"}}},"layout":{"type":"constrained","wideSize":"1280px"}} -->
+	<div class="wp-block-group alignfull" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--60)">
+		<!-- wp:heading {"align":"wide","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|50"}}},"fontSize":"x-large"} -->
+		<h2 class="wp-block-heading alignwide has-x-large-font-size" style="margin-bottom:var(--wp--preset--spacing--50)">In the showroom</h2>
+		<!-- /wp:heading -->
+
+		<!-- wp:query {"queryId":10,"query":{"perPage":6,"pages":0,"offset":0,"postType":"product","order":"asc","orderBy":"title","inherit":false},"align":"wide","layout":{"type":"default"}} -->
+		<div class="wp-block-query alignwide">
+			<!-- wp:post-template {"layout":{"type":"grid","columnCount":3}} -->
+				<!-- wp:post-featured-image {"isLink":true,"aspectRatio":"4/3","style":{"border":{"radius":"0"}}} /-->
+
+				<!-- wp:post-title {"level":3,"isLink":true,"fontSize":"large","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} /-->
+
+				<!-- wp:post-excerpt {"excerptLength":18,"fontSize":"small","textColor":"string"} /-->
+			<!-- /wp:post-template -->
+
+			<!-- wp:query-no-results -->
+				<!-- wp:paragraph {"textColor":"string"} -->
+				<p class="has-string-color has-text-color">The showroom listing appears here once instruments are added. Until then, call in — there are always more instruments on the floor than on the website.</p>
+				<!-- /wp:paragraph -->
+			<!-- /wp:query-no-results -->
+		</div>
+		<!-- /wp:query -->
+
+		<!-- wp:buttons {"style":{"spacing":{"margin":{"top":"var:preset|spacing|50"}}},"layout":{"type":"flex","justifyContent":"left"}} -->
+		<div class="wp-block-buttons" style="margin-top:var(--wp--preset--spacing--50)">
+			<!-- wp:button {"className":"is-style-outline","style":{"color":{"background":"transparent","text":"var:preset|color|ivory"},"border":{"color":"var:preset|color|string","width":"1px"}}} -->
+			<div class="wp-block-button is-style-outline"><a class="wp-block-button__link has-border-color wp-element-button" href="/shop/" style="border-color:var(--wp--preset--color--string);border-width:1px;color:var(--wp--preset--color--ivory);background:transparent">See every instrument</a></div>
+			<!-- /wp:button -->
+		</div>
+		<!-- /wp:buttons -->
+	</div>
+	<!-- /wp:group -->
+
+	<!-- wp:pattern {"slug":"client-piano/services-workshop"} /-->
+
+	<!-- wp:group {"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|70","bottom":"var:preset|spacing|70"}}},"layout":{"type":"constrained"}} -->
+	<div class="wp-block-group alignfull" style="padding-top:var(--wp--preset--spacing--70);padding-bottom:var(--wp--preset--spacing--70)">
+		<!-- wp:quote -->
+		<blockquote class="wp-block-quote">
+			<!-- wp:paragraph -->
+			<p>They found a cracked bridge two other tuners had missed, told me plainly what it would cost, and then talked me out of the more expensive option.</p>
+			<!-- /wp:paragraph -->
+			<cite>Rehearsal pianist, Royal Northern College</cite>
+		</blockquote>
+		<!-- /wp:quote -->
+	</div>
+	<!-- /wp:group -->
+
+	<!-- wp:pattern {"slug":"client-piano/showroom-visit"} /-->
+</main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

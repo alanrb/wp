@@ -1,0 +1,61 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+
+<!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|70"}}},"layout":{"type":"constrained","wideSize":"1220px"}} -->
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--70)">
+	<!-- wp:post-title {"level":1,"align":"wide","fontSize":"x-large"} /-->
+
+	<!-- wp:separator {"align":"wide","backgroundColor":"copper","className":"is-style-wide","style":{"spacing":{"margin":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|50"}}}} -->
+	<hr class="wp-block-separator alignwide has-text-color has-copper-color has-alpha-channel-opacity has-copper-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--40);margin-bottom:var(--wp--preset--spacing--50)"/>
+	<!-- /wp:separator -->
+
+	<!-- wp:woocommerce/cart {"align":"wide"} -->
+	<div class="wp-block-woocommerce-cart alignwide is-loading">
+		<!-- wp:woocommerce/filled-cart-block -->
+		<div class="wp-block-woocommerce-filled-cart-block">
+			<!-- wp:woocommerce/cart-items-block -->
+			<div class="wp-block-woocommerce-cart-items-block">
+				<!-- wp:woocommerce/cart-line-items-block -->
+				<div class="wp-block-woocommerce-cart-line-items-block"></div>
+				<!-- /wp:woocommerce/cart-line-items-block -->
+			</div>
+			<!-- /wp:woocommerce/cart-items-block -->
+
+			<!-- wp:woocommerce/cart-totals-block -->
+			<div class="wp-block-woocommerce-cart-totals-block">
+				<!-- wp:woocommerce/cart-order-summary-block -->
+				<div class="wp-block-woocommerce-cart-order-summary-block"></div>
+				<!-- /wp:woocommerce/cart-order-summary-block -->
+
+				<!-- wp:woocommerce/proceed-to-checkout-block -->
+				<div class="wp-block-woocommerce-proceed-to-checkout-block"></div>
+				<!-- /wp:woocommerce/proceed-to-checkout-block -->
+			</div>
+			<!-- /wp:woocommerce/cart-totals-block -->
+		</div>
+		<!-- /wp:woocommerce/filled-cart-block -->
+
+		<!-- wp:woocommerce/empty-cart-block -->
+		<div class="wp-block-woocommerce-empty-cart-block">
+			<!-- wp:heading {"level":2,"fontSize":"large"} -->
+			<h2 class="wp-block-heading has-large-font-size">Your cart is empty</h2>
+			<!-- /wp:heading -->
+
+			<!-- wp:paragraph {"textColor":"copper"} -->
+			<p class="has-copper-color has-text-color">Nothing here yet. Mixed cases work out cheaper than single jars, and we will pack any six flavours you like.</p>
+			<!-- /wp:paragraph -->
+
+			<!-- wp:buttons -->
+			<div class="wp-block-buttons">
+				<!-- wp:button -->
+				<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="/shop/">Shop the jars</a></div>
+				<!-- /wp:button -->
+			</div>
+			<!-- /wp:buttons -->
+		</div>
+		<!-- /wp:woocommerce/empty-cart-block -->
+	</div>
+	<!-- /wp:woocommerce/cart -->
+</main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

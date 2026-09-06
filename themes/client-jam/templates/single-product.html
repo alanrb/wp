@@ -1,0 +1,51 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+
+<!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|70"}}},"layout":{"type":"constrained","wideSize":"1220px"}} -->
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--70)">
+	<!-- wp:columns {"align":"wide","style":{"spacing":{"blockGap":{"top":"var:preset|spacing|50","left":"var:preset|spacing|60"}}}} -->
+	<div class="wp-block-columns alignwide">
+		<!-- wp:column {"width":"55%"} -->
+		<div class="wp-block-column" style="flex-basis:55%">
+			<!-- wp:woocommerce/product-image-gallery /-->
+		</div>
+		<!-- /wp:column -->
+
+		<!-- wp:column -->
+		<div class="wp-block-column">
+			<!-- wp:post-title {"level":1,"fontSize":"x-large"} /-->
+
+			<!-- wp:woocommerce/product-price {"fontSize":"large","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} /-->
+
+			<!-- wp:woocommerce/product-rating /-->
+
+			<!-- wp:post-excerpt {"excerptLength":60,"fontSize":"medium","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} /-->
+
+			<!-- wp:separator {"backgroundColor":"copper","className":"is-style-wide","style":{"spacing":{"margin":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40"}}}} -->
+			<hr class="wp-block-separator has-text-color has-copper-color has-alpha-channel-opacity has-copper-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--40);margin-bottom:var(--wp--preset--spacing--40)"/>
+			<!-- /wp:separator -->
+
+			<!-- wp:woocommerce/add-to-cart-form /-->
+
+			<!-- wp:paragraph {"textColor":"copper","fontSize":"small","style":{"spacing":{"margin":{"top":"var:preset|spacing|40"}}}} -->
+			<p class="has-copper-color has-text-color has-small-font-size" style="margin-top:var(--wp--preset--spacing--40)">Every jar carries its batch number and the orchard the fruit came from. Allergen sheets are available for every recipe on request.</p>
+			<!-- /wp:paragraph -->
+
+			<!-- wp:woocommerce/product-meta /-->
+		</div>
+		<!-- /wp:column -->
+	</div>
+	<!-- /wp:columns -->
+
+	<!-- wp:group {"align":"wide","style":{"spacing":{"margin":{"top":"var:preset|spacing|60"}}},"layout":{"type":"constrained"}} -->
+	<div class="wp-block-group alignwide" style="margin-top:var(--wp--preset--spacing--60)">
+		<!-- wp:post-content {"layout":{"type":"constrained"}} /-->
+	</div>
+	<!-- /wp:group -->
+
+	<!-- wp:woocommerce/related-products {"align":"wide"} -->
+	<div class="wp-block-woocommerce-related-products alignwide"></div>
+	<!-- /wp:woocommerce/related-products -->
+</main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->

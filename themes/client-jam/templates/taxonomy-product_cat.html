@@ -1,0 +1,39 @@
+<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+
+<!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|60","bottom":"var:preset|spacing|70"}}},"layout":{"type":"constrained","wideSize":"1220px"}} -->
+<main class="wp-block-group" style="padding-top:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--70)">
+	<!-- wp:query-title {"type":"archive","align":"wide","fontSize":"x-large"} /-->
+
+	<!-- wp:term-description {"align":"wide","textColor":"copper","fontSize":"large","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} /-->
+
+	<!-- wp:separator {"align":"wide","backgroundColor":"copper","className":"is-style-wide","style":{"spacing":{"margin":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|50"}}}} -->
+	<hr class="wp-block-separator alignwide has-text-color has-copper-color has-alpha-channel-opacity has-copper-background-color has-background is-style-wide" style="margin-top:var(--wp--preset--spacing--40);margin-bottom:var(--wp--preset--spacing--50)"/>
+	<!-- /wp:separator -->
+
+	<!-- wp:query {"queryId":20,"query":{"perPage":12,"pages":0,"offset":0,"postType":"product","order":"asc","orderBy":"title","inherit":true},"align":"wide","layout":{"type":"default"}} -->
+	<div class="wp-block-query alignwide">
+		<!-- wp:post-template {"layout":{"type":"grid","columnCount":3}} -->
+			<!-- wp:post-featured-image {"isLink":true,"aspectRatio":"4/3","style":{"border":{"radius":"0"}}} /-->
+
+			<!-- wp:post-title {"level":2,"isLink":true,"fontSize":"large","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} /-->
+
+			<!-- wp:post-excerpt {"excerptLength":20,"fontSize":"small","textColor":"copper"} /-->
+		<!-- /wp:post-template -->
+
+		<!-- wp:query-pagination {"align":"wide","style":{"spacing":{"margin":{"top":"var:preset|spacing|60"}}},"layout":{"type":"flex","justifyContent":"space-between"}} -->
+			<!-- wp:query-pagination-previous /-->
+			<!-- wp:query-pagination-numbers /-->
+			<!-- wp:query-pagination-next /-->
+		<!-- /wp:query-pagination -->
+
+		<!-- wp:query-no-results -->
+			<!-- wp:paragraph {"textColor":"copper"} -->
+			<p class="has-copper-color has-text-color">Nothing in that flavour right now. Batches come off the pan weekly, so it is worth asking what is close.</p>
+			<!-- /wp:paragraph -->
+		<!-- /wp:query-no-results -->
+	</div>
+	<!-- /wp:query -->
+</main>
+<!-- /wp:group -->
+
+<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->
