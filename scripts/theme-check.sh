@@ -4,28 +4,19 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+# shellcheck source=lib/wp-theme.sh
+. "$ROOT/scripts/lib/wp-theme.sh"
+
 [ "$#" -ge 1 ] || { echo "Usage: theme-check.sh <theme-slug>" >&2; exit 2; }
 THEME="$1"
 
+# A copy previously installed into wp-content/themes shadows the client-themes
+# bind mount, so Theme Check would inspect those stale files instead of the
+# live tree. See wp_theme_remove_installed_copy() for the full explanation and
+# for why `wp theme delete` must never be used here.
+wp_theme_remove_installed_copy "$THEME"
+
 docker compose run --rm cli theme activate "$THEME" --allow-root
-set +e
-OUTPUT="$(docker compose run --rm cli theme-check run "$THEME" --allow-root 2>&1)"
-STATUS=$?
-set -e
-echo "$OUTPUT"
-
-# wp-cli also exits non-zero for reasons that mean Theme Check never ran at
-# all (theme not found, the plugin missing/deactivated, a docker/wp-cli
-# crash) — not only when it ran and found REQUIRED-level problems. Trusting
-# a REQUIRED grep alone would let those cases through as "zero problems".
-if [ "$STATUS" -ne 0 ] && ! echo "$OUTPUT" | grep -qi 'REQUIRED'; then
-  echo "Error: Theme Check did not complete (exit $STATUS) and reported no REQUIRED-level findings — this cannot be trusted as a pass." >&2
-  exit 1
-fi
-
-if echo "$OUTPUT" | grep -qi 'REQUIRED'; then
-  echo "Error: Theme Check reported REQUIRED-level problems in $THEME." >&2
-  exit 1
-fi
+wp_theme_check_run "$THEME"
 
 echo "Theme Check passed for $THEME"

@@ -6,12 +6,17 @@ THEMES_DIR="${THEMES_DIR:-$ROOT/themes}"
 DIST_DIR="${DIST_DIR:-$ROOT/dist}"
 cd "$ROOT"
 
+# shellcheck source=lib/wp-theme.sh
+. "$ROOT/scripts/lib/wp-theme.sh"
+
 [ -f .env ] && { set -a; . ./.env; set +a; }
 WP_URL="${WP_URL:-http://localhost:8080}"
 # Exported so `docker compose run` (a child process) resolves the cli
-# container's /dist mount from the same DIST_DIR verify.sh itself uses —
-# see docker-compose.yml's `${DIST_DIR:-./dist}:/dist` (Finding 5).
+# container's mounts from the same directories verify.sh itself uses — see
+# docker-compose.yml's `${DIST_DIR:-./dist}:/dist` (Finding 5) and
+# `${THEMES_DIR:-./themes}:/var/www/html/wp-content/client-themes`.
 export DIST_DIR
+export THEMES_DIR
 
 [ "$#" -ge 1 ] || { echo "Usage: verify.sh <theme-slug>" >&2; exit 2; }
 THEME="$1"
@@ -30,7 +35,16 @@ step() { echo; echo "==> $1"; }
 MU_PLUGIN_DIR="$ROOT/docker/mu-plugins"
 MU_PLUGIN="$MU_PLUGIN_DIR/zzz-verify-suppress-checkout-redirect.php"
 cleanup_mu_plugin() { rm -f "$MU_PLUGIN"; }
-trap cleanup_mu_plugin EXIT
+# Step 5 installs the packaged zip into wp-content/themes, which SHADOWS the
+# client-themes bind mount for this slug (see wp_theme_remove_installed_copy).
+# Leaving it there would make the next run's Theme Check inspect these stale
+# files and would silently kill live editing for this theme, so the dev loop is
+# restored on the way out however this script exits.
+cleanup() {
+  cleanup_mu_plugin
+  wp_theme_remove_installed_copy "$THEME" || true
+}
+trap cleanup EXIT
 mkdir -p "$MU_PLUGIN_DIR"
 cat > "$MU_PLUGIN" <<'PHP'
 <?php
@@ -56,31 +70,37 @@ while IFS= read -r -d '' php_file; do
   docker compose run --rm --entrypoint php cli -l "/var/www/html/wp-content/client-themes/${php_file#"$THEMES_DIR/"}" >/dev/null
 done < <(find "$THEME_PATH" -name '*.php' -not -path '*/node_modules/*' -print0)
 
+# PRD R1: no Custom HTML blocks. They break the Site Editor, and Theme Check
+# does not look for them. tests/scripts/theme-template.bats only guards the
+# base template — this is the check that covers the hand-authored markup of a
+# real theme, and the zip built from it.
+HTML_BLOCKS=""
+for block_dir in templates parts patterns; do
+  [ -d "$THEME_PATH/$block_dir" ] || continue
+  found="$(grep -rn 'wp:html' "$THEME_PATH/$block_dir" || true)"
+  if [ -n "$found" ]; then
+    HTML_BLOCKS="$HTML_BLOCKS$found"$'\n'
+  fi
+done
+if [ -n "$HTML_BLOCKS" ]; then
+  echo "Error: Custom HTML blocks (wp:html) are forbidden in block themes (PRD R1) — they break the Site Editor." >&2
+  echo "       Replace them with core blocks. Found in $THEME:" >&2
+  printf '%s' "$HTML_BLOCKS" >&2
+  exit 1
+fi
+
 step "2/7 Validate theme.json"
 node "$ROOT/scripts/lib/validate-theme-json.mjs" "$THEME_PATH/theme.json"
 
 step "3/7 Theme Check"
+# A copy installed by an earlier run (step 5, below) lives in wp-content/themes
+# and SHADOWS the client-themes bind mount, so without this Theme Check would
+# inspect the previous run's files while step 4 packages the live tree — the
+# gate would pass a zip it never actually checked. See
+# wp_theme_remove_installed_copy() for why `wp theme delete` must not be used.
+wp_theme_remove_installed_copy "$THEME"
 wp theme activate "$THEME"
-set +e
-CHECK_OUTPUT="$(wp theme-check run "$THEME" 2>&1)"
-CHECK_STATUS=$?
-set -e
-echo "$CHECK_OUTPUT"
-# A non-zero exit is expected when Theme Check actually ran and found
-# REQUIRED-level problems (handled below) — but wp-cli also exits non-zero
-# for reasons that mean Theme Check never ran at all (theme not found, the
-# plugin missing/deactivated, a docker/wp-cli crash). Silently swallowing
-# that with `|| true` and trusting only the REQUIRED grep would let those
-# cases through as "zero problems found". Require the run to have actually
-# produced a Theme Check result before trusting its silence.
-if [ "$CHECK_STATUS" -ne 0 ] && ! echo "$CHECK_OUTPUT" | grep -qi 'REQUIRED'; then
-  echo "Error: Theme Check did not complete (exit $CHECK_STATUS) and reported no REQUIRED-level findings — this cannot be trusted as a pass." >&2
-  exit 1
-fi
-if echo "$CHECK_OUTPUT" | grep -qi 'REQUIRED'; then
-  echo "Error: Theme Check reported REQUIRED-level problems." >&2
-  exit 1
-fi
+wp_theme_check_run "$THEME"
 
 step "4/7 Build and package"
 "$ROOT/scripts/build-theme.sh" "$THEME"
@@ -153,6 +173,36 @@ if echo "$DEBUG_LOG" | grep -Eq 'PHP (Warning|Notice|Fatal|Deprecated)'; then
 fi
 
 step "7/7 Accessibility"
+# .pa11yci.json hardcodes :8080. If WP_PORT is overridden, pa11y-ci would scan
+# whatever else answers on 8080 and PASS — the fail-open shape this gate exists
+# to prevent. Prove the page pa11y is about to scan really belongs to the theme
+# under test before trusting its verdict. The theme's own enqueued stylesheet
+# carries the theme root and slug in its URL, which is the fingerprint we look
+# for (either theme root can legitimately serve it).
+PA11Y_URL="$(node -e '
+  const config = require( process.argv[ 1 ] );
+  const first = Array.isArray( config.urls ) ? config.urls[ 0 ] : undefined;
+  const url = typeof first === "string" ? first : first && first.url;
+  if ( ! url ) {
+    process.exit( 1 );
+  }
+  process.stdout.write( url );
+' "$ROOT/.pa11yci.json")"
+set +e
+PA11Y_HTML="$(curl -sS --fail "$PA11Y_URL" 2>&1)"
+PA11Y_FETCH_STATUS=$?
+set -e
+if [ "$PA11Y_FETCH_STATUS" -ne 0 ]; then
+  echo "Error: could not fetch $PA11Y_URL (curl exit $PA11Y_FETCH_STATUS) — the page pa11y-ci is configured to scan is not reachable, so its verdict would be meaningless." >&2
+  echo "$PA11Y_HTML" >&2
+  exit 1
+fi
+if ! printf '%s' "$PA11Y_HTML" | grep -Eq "wp-content/(client-)?themes/$THEME/"; then
+  echo "Error: $PA11Y_URL does not render $THEME — no wp-content/themes/$THEME/ asset reference in the response." >&2
+  echo "       .pa11yci.json scans port 8080; if WP_PORT is overridden this is a different service, and a11y results for it would say nothing about $THEME." >&2
+  exit 1
+fi
+echo "  ok  $PA11Y_URL is served by $THEME"
 "$ROOT/node_modules/.bin/pa11y-ci" --config "$ROOT/.pa11yci.json"
 
 echo
