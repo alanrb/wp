@@ -49,6 +49,64 @@ reporting a pass.
 
 Both sell through WooCommerce and ship self-hosted OFL fonts.
 
+## Delivering a theme to a client's website
+
+```bash
+npm run verify -- client-piano    # gate it, and produce the zip
+ls dist/client-piano-1.0.0.zip    # this file is the deliverable
+```
+
+The zip contains one folder named after the theme and nothing else — no build tooling, no
+`src/`, no repo scaffolding. It installs on any standard WordPress host.
+
+### What the client's site needs first
+
+| Requirement | Value |
+|---|---|
+| WordPress | 6.6 or newer |
+| PHP | 8.1 or newer |
+| WooCommerce | Required for the shop, cart and checkout pages |
+
+WooCommerce is a free plugin the client installs themselves. Without it the theme still activates
+and every non-shop page renders normally — the product templates simply sit unused.
+
+### Installing it
+
+**Through wp-admin** — what most clients will do:
+
+1. **Appearance → Themes → Add New → Upload Theme**
+2. Choose the `.zip`, then **Install Now**
+3. **Activate**
+
+**Over WP-CLI**, if the host provides SSH:
+
+```bash
+wp theme install client-piano-1.0.0.zip --activate
+```
+
+**Over SFTP**, as a last resort: unzip locally and upload the `client-piano/` folder into
+`wp-content/themes/`, then activate it under Appearance → Themes.
+
+### After activating
+
+1. **Settings → Permalinks** — choose "Post name" and save. WooCommerce's `/shop/`, `/cart/` and
+   `/checkout/` routes will 404 until permalink rules are flushed, and saving is what flushes them.
+2. **Add products.** The theme ships templates, not stock — the client adds their own products,
+   prices and photographs.
+3. **Set the menu.** Appearance → Editor → Navigation, or the site falls back to listing every
+   published page alphabetically.
+4. **Adjust the design** in Appearance → Editor → Styles. Colours, fonts, spacing and layout
+   widths all come from `theme.json`, so the client can change them without touching code and
+   without losing anything on the next update.
+
+### Updating a delivered theme
+
+Bump the version in the theme's `style.css`, re-run `npm run verify`, and send the new zip. The
+client uploads it the same way; WordPress notices the theme already exists and offers to replace
+it. Their content, settings and Site Editor changes survive the replacement.
+
+Version each theme independently — `client-jam` never needs touching to ship a `client-piano` fix.
+
 ## Licensing
 
 This repository is Apache-2.0. **Delivered themes are GPL-2.0-or-later**, declared in each
