@@ -47,14 +47,58 @@ reporting a pass.
 | `client-piano` | Piano dealer — instrument sales, tuning, repair, restoration and hire |
 | `client-jam` | Preserves producer — retail jars and wholesale supply |
 
-Both sell through WooCommerce and ship self-hosted OFL fonts.
+Both sell through WooCommerce and ship self-hosted OFL fonts. Nothing below is a mockup — these
+are the running sites.
 
-## Delivering a theme to a client's website
+### Piano Store & Services
+
+Ebony lacquer, aged ivory and hammer-felt crimson, set in Bodoni Moda. The home page opens with
+the shop's name treated the way a maker's name is engraved on a fallboard, over the felt strip
+that sits under the keys.
+
+| Home | Shop | Product |
+|---|---|---|
+| [![Piano home page](screenshots/piano1.png)](screenshots/piano1.png) | [![Piano shop archive](screenshots/piano2.png)](screenshots/piano2.png) | [![Piano product page](screenshots/piano3.png)](screenshots/piano3.png) |
+
+### Fruit Jam Production
+
+Sugar white, damson and copper, set in Petrona. The product itself supplies the palette, and the
+hero leads with what is actually in the pan this week rather than a slogan.
+
+| Home | Shop | Product |
+|---|---|---|
+| [![Jam home page](screenshots/jam1.png)](screenshots/jam1.png) | [![Jam shop archive](screenshots/jam2.png)](screenshots/jam2.png) | [![Jam product page](screenshots/jam3.png)](screenshots/jam3.png) |
+
+The two share a foundation and no design decisions — that is the point of the isolation model.
+
+## Building a theme into a zip
 
 ```bash
-npm run verify -- client-piano    # gate it, and produce the zip
-ls dist/client-piano-1.0.0.zip    # this file is the deliverable
+npm run build -- client-piano       # compile src/ into the theme's build/
+npm run package -- client-piano     # zip it -> dist/client-piano-1.0.0.zip
 ```
+
+Or in one step, gated:
+
+```bash
+npm run verify -- client-piano      # lint, check, build, package, install, smoke, a11y
+```
+
+`verify` does everything `build` and `package` do and then proves the result works, so it is the
+command to use before sending anything to a client. Reach for `build` and `package` on their own
+while iterating.
+
+A few things worth knowing:
+
+- **The version comes from the theme's own `style.css`.** `Version: 1.0.0` produces
+  `client-piano-1.0.0.zip`. Bump that header to ship an update.
+- **`package` refuses to run without a build**, rather than quietly zipping a theme with no
+  compiled CSS or JS. It also lints first — pass `--skip-lint` to bypass that while iterating.
+- **`dist/` is gitignored.** Zips are build output, not source; regenerate them rather than
+  committing them.
+- Each theme versions independently — shipping a `client-piano` fix never touches `client-jam`.
+
+## Delivering a theme to a client's website
 
 The zip contains one folder named after the theme and nothing else — no build tooling, no
 `src/`, no repo scaffolding. It installs on any standard WordPress host.
